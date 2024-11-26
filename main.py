@@ -1,72 +1,66 @@
-import flatbuffers
-import csv
 import serial
-import sys
-from Mail.Mail import Mail
-from Mail.Input import Input
+import flatbuffers
+from SerialMail.SerialMail import SerialMail
+from SerialMail.Value import Value
 
-# Function to deserialize the Flatbuffer data
-def deserialize_mail(serial_data):
-    # Create a FlatBuffer builder and deserialize the incoming byte array
-    buf = bytearray(serial_data)
-    mail = Mail.GetRootAsMail(buf, 0)
+def read_serial_mail(serial_connection):
+    """
+    Reads FlatBuffers data from a serial connection and decodes it as SerialMail.
+    """
+    # Read the buffer size first (assuming size is sent as 4 bytes, big-endian)
+    size_bytes = serial_connection.read(4)
+    if len(size_bytes) < 4:
+        print("Failed to read the size of the buffer.")
+        return None
+    
+    size = int.from_bytes(size_bytes, byteorder='big')  # Convert bytes to integer
+    print(f"Expected buffer size: {size} bytes")
 
-    # Extract the inputs (3-byte arrays) and classification floats
-    inputs = []
-    for i in range(mail.InputsLength()):
-        input_data = mail.Inputs(i)
-        inputs.append(list(input_data.DataAsNumpy()))  # Convert input to list for easier manipulation
+    # Read the serialized buffer
+    buffer = serial_connection.read(size)
+    if len(buffer) < size:
+        print("Failed to read the complete buffer.")
+        return None
+    
+    # Decode the FlatBuffers data
+    return SerialMail.GetRootAs(buffer, 0)
 
-    classification = list(mail.ClassificationAsNumpy())
-    classification_active = mail.ClassificationActive()
-    channel = mail.Channel()
-
-    return inputs, classification, classification_active, channel
-
-# Function to save data to CSV
-def save_to_csv(inputs, classification, classification_active, channel):
-    with open('output.csv', mode='w', newline='') as file:
-        writer = csv.writer(file)
-        
-        # Write headers for CSV
-        writer.writerow(['Input 1', 'Input 2', 'Input 3', 'Classification', 'Active', 'Channel'])
-        
-        # Write each input and its associated classification
-        for input_data, class_value in zip(inputs, classification):
-            writer.writerow(input_data + [class_value, classification_active, channel])
-
-# Main function to run the program
 def main():
-    # Open the UART port (ttyS0) for reading
+    # Open the serial connection (adjust port and baudrate as needed)
+    # Baud Rate: 115200 (set explicitly in Python).
+    # Data Bits: 8 (bytesize=serial.EIGHTBITS by default).
+    # Parity: None (parity=serial.PARITY_NONE by default).
+    # Stop Bits: 1 (stopbits=serial.STOPBITS_ONE by default).
+    serial_connection = serial.Serial(port="/dev/ttyS0", baudrate=115200, timeout=1)
+    
+    print("Listening for data...")
+    
     try:
-        ser = serial.Serial('/dev/ttyS0', 19200, timeout=1, parity=serial.PARITY_ODD)  # Set baud rate and timeout as necessary
-        print("Connected to UART on /dev/ttyS0")
-    except serial.SerialException as e:
-        print(f"Error: Unable to open UART port: {e}")
-        sys.exit(1)
+        while True:
+            # Attempt to read and decode SerialMail data
+            serial_mail = read_serial_mail(serial_connection)
+            if serial_mail:
+                # Process and print the decoded SerialMail object
+                print("\nReceived SerialMail:")
+                print(f"Classification Active: {serial_mail.ClassificationActive()}")
+                print(f"Channel: {serial_mail.Channel()}")
 
-    while True:
-        # Read data from UART (you may want to adjust the size based on your message size)
-        serial_data = ser.read(1024)  # Read up to 1024 bytes (adjust if necessary)
-        
-        if len(serial_data) == 0:
-            print("No data received, retrying...")
-            continue
+                # Print inputs
+                inputs_length = serial_mail.InputsLength()
+                print(f"Inputs ({inputs_length}):")
+                for i in range(inputs_length):
+                    value = serial_mail.Inputs(i)
+                    print(f"  Input {i}: ({value.Data0()}, {value.Data1()}, {value.Data2()})")
 
-        print(f"Received {len(serial_data)} bytes of data.")
-
-        # Deserialize the data
-        inputs, classification, classification_active, channel = deserialize_mail(serial_data)
-
-        # Save the deserialized data to a CSV file
-        save_to_csv(inputs, classification, classification_active, channel)
-        print("Data successfully saved to output.csv!")
-
-        # Optionally, break the loop after one iteration or run indefinitely
-        break  # Remove this line if you want the program to run continuously
-
-    # Close the UART port
-    ser.close()
+                # Print classifications
+                classification_length = serial_mail.ClassificationLength()
+                print(f"Classification ({classification_length}):")
+                for j in range(classification_length):
+                    print(f"  {serial_mail.Classification(j):.2f}")
+    except KeyboardInterrupt:
+        print("Exiting...")
+    finally:
+        serial_connection.close()
 
 if __name__ == "__main__":
     main()
