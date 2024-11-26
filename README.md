@@ -34,3 +34,13 @@ pip install -r requirements.txt
 | `--baudrate`   | No           | Baud rate for serial communication (default: `115200`).                |
 | `--file`       | Yes          | Output file name (e.g., `measurement`).                |
 | `--format`     | Yes          | Output format: `csv` or `json`.                                         |
+
+## Example Commands
+### Log Data to a CSV File
+```bash
+python3 main.py --port /dev/ttyS0 --baudrate 115200 --file measurement --format csv
+```
+### Log Data to a JSON File
+```bash
+python3 main.py --port /dev/ttyS0 --baudrate 115200 --file measurement --format json
+```
