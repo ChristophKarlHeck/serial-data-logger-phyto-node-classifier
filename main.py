@@ -4,16 +4,13 @@ from SerialMail.SerialMail import SerialMail
 from SerialMail.Value import Value
 
 def read_serial_mail(serial_connection):
-    """
-    Reads FlatBuffers data from a serial connection and decodes it as SerialMail.
-    """
-    # Read the buffer size first (assuming size is sent as 4 bytes, big-endian)
+    # Read the buffer size (4 bytes)
     size_bytes = serial_connection.read(4)
     if len(size_bytes) < 4:
         print("Failed to read the size of the buffer.")
         return None
     
-    size = int.from_bytes(size_bytes, byteorder='big')  # Convert bytes to integer
+    size = int.from_bytes(size_bytes, byteorder='little')  # Match C++ endianness
     print(f"Expected buffer size: {size} bytes")
 
     # Read the serialized buffer
@@ -21,20 +18,18 @@ def read_serial_mail(serial_connection):
     if len(buffer) < size:
         print("Failed to read the complete buffer.")
         return None
-    
+
     # Decode the FlatBuffers data
-    return SerialMail.GetRootAs(buffer, 0)
+    buffer = bytearray(buffer)
+    serial_mail = SerialMail.GetRootAs(buffer, 0)
+    return serial_mail
+
 
 def main():
     # Open the serial connection (adjust port and baudrate as needed)
-    # Baud Rate: 115200 (set explicitly in Python).
-    # Data Bits: 8 (bytesize=serial.EIGHTBITS by default).
-    # Parity: None (parity=serial.PARITY_NONE by default).
-    # Stop Bits: 1 (stopbits=serial.STOPBITS_ONE by default).
     serial_connection = serial.Serial(port="/dev/ttyS0", baudrate=115200, timeout=1)
-    
     print("Listening for data...")
-    
+
     try:
         while True:
             # Attempt to read and decode SerialMail data
