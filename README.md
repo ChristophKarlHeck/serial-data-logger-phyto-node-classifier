@@ -44,3 +44,22 @@ python3 main.py --port /dev/ttyS0 --baudrate 115200 --file measurement --format 
 ```bash
 python3 main.py --port /dev/ttyS0 --baudrate 115200 --file measurement --format json
 ```
+
+## How It Works
+
+### Data Workflow
+
+1. **Serial Data Read**:
+   - Reads structured binary data over a serial connection using `serial.Serial`.
+
+2. **Decoding**:
+   - Decodes data using FlatBuffers.
+
+3. **Processing**:
+   - Converts 3-byte raw byte measurements into analog voltages using:
+     - Configurable `databits` (default: `8388608`).
+     - Configurable `vref` (default: `2.5V`).
+     - Configurable `gain` (default: `4.0`).
+
+4. **Output**:
+   - Exports processed data to JSON or CSV, appending to existing files if applicable.
