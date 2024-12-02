@@ -4,6 +4,7 @@ import flatbuffers
 import json
 import csv
 import os
+from datetime import datetime
 from SerialMail.SerialMail import SerialMail
 from SerialMail.Value import Value
 
@@ -92,6 +93,7 @@ def write_to_json(filename, classification_active, channel, raw_input_bytes, vol
 
     # Prepare data to save
     data = {
+        "Timestamp": datetime.now().isoformat(),
         "ClassificationActive": classification_active,
         "Channel": channel,
         "RawInputBytes": raw_input_bytes,
@@ -128,7 +130,7 @@ def write_to_csv(filename, classification_active, channel, raw_input_bytes, volt
     # Open the CSV file in append mode
     with open(filename, mode="a", newline="") as csvfile:
         # Define CSV fieldnames and writer
-        fieldnames = ["ClassificationActive", "Channel", "RawInputBytes", "InputVoltages", "Classifications"]
+        fieldnames = ["Timestamp","ClassificationActive", "Channel", "RawInputBytes", "InputVoltages", "Classifications"]
         csv_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         # Write the header only if the file does not exist
@@ -137,6 +139,7 @@ def write_to_csv(filename, classification_active, channel, raw_input_bytes, volt
 
         # Write the data row
         csv_writer.writerow({
+            "Timestamp": datetime.now().isoformat(),
             "ClassificationActive": classification_active,
             "Channel": channel,
             "RawInputBytes": raw_input_bytes,
