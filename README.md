@@ -1,4 +1,4 @@
-# Serial Data Logger
+# Serial Data Logger for Phyto Node Classifier
 
 `serial-data-logger` is a Python-based tool for reading, processing, and exporting serial data transmitted via a serial port. It decodes structured data using the FlatBuffers serialization library, converts raw byte measurements into analog voltages, and exports the results to JSON or CSV formats.
 
