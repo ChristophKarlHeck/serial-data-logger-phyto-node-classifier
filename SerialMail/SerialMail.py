@@ -25,7 +25,7 @@ class SerialMail(object):
         self._tab = flatbuffers.table.Table(buf, pos)
 
     # SerialMail
-    def Inputs(self, j):
+    def InputsCh0(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             x = self._tab.Vector(o)
@@ -37,57 +37,94 @@ class SerialMail(object):
         return None
 
     # SerialMail
-    def InputsLength(self):
+    def InputsCh0Length(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # SerialMail
-    def InputsIsNone(self):
+    def InputsCh0IsNone(self):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(4))
         return o == 0
 
     # SerialMail
-    def Classification(self, j):
+    def InputsCh1(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            x = self._tab.Vector(o)
+            x += flatbuffers.number_types.UOffsetTFlags.py_type(j) * 3
+            from SerialMail.Value import Value
+            obj = Value()
+            obj.Init(self._tab.Bytes, x)
+            return obj
+        return None
+
+    # SerialMail
+    def InputsCh1Length(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        if o != 0:
+            return self._tab.VectorLen(o)
+        return 0
+
+    # SerialMail
+    def InputsCh1IsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+        return o == 0
+
+    # SerialMail
+    def ClassificationCh0(self, j):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             a = self._tab.Vector(o)
             return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
         return 0
 
     # SerialMail
-    def ClassificationAsNumpy(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+    def ClassificationCh0AsNumpy(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Float32Flags, o)
         return 0
 
     # SerialMail
-    def ClassificationLength(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+    def ClassificationCh0Length(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         if o != 0:
             return self._tab.VectorLen(o)
         return 0
 
     # SerialMail
-    def ClassificationIsNone(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(6))
+    def ClassificationCh0IsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
         return o == 0
 
     # SerialMail
-    def ClassificationActive(self):
-        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(8))
-        if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
-        return False
-
-    # SerialMail
-    def Channel(self):
+    def ClassificationCh1(self, j):
         o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
         if o != 0:
-            return bool(self._tab.Get(flatbuffers.number_types.BoolFlags, o + self._tab.Pos))
-        return False
+            a = self._tab.Vector(o)
+            return self._tab.Get(flatbuffers.number_types.Float32Flags, a + flatbuffers.number_types.UOffsetTFlags.py_type(j * 4))
+        return 0
+
+    # SerialMail
+    def ClassificationCh1AsNumpy(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            return self._tab.GetVectorAsNumpy(flatbuffers.number_types.Float32Flags, o)
+        return 0
+
+    # SerialMail
+    def ClassificationCh1Length(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        if o != 0:
+            return self._tab.VectorLen(o)
+        return 0
+
+    # SerialMail
+    def ClassificationCh1IsNone(self):
+        o = flatbuffers.number_types.UOffsetTFlags.py_type(self._tab.Offset(10))
+        return o == 0
 
 def SerialMailStart(builder):
     builder.StartObject(4)
@@ -95,41 +132,53 @@ def SerialMailStart(builder):
 def Start(builder):
     SerialMailStart(builder)
 
-def SerialMailAddInputs(builder, inputs):
-    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(inputs), 0)
+def SerialMailAddInputsCh0(builder, inputsCh0):
+    builder.PrependUOffsetTRelativeSlot(0, flatbuffers.number_types.UOffsetTFlags.py_type(inputsCh0), 0)
 
-def AddInputs(builder, inputs):
-    SerialMailAddInputs(builder, inputs)
+def AddInputsCh0(builder, inputsCh0):
+    SerialMailAddInputsCh0(builder, inputsCh0)
 
-def SerialMailStartInputsVector(builder, numElems):
+def SerialMailStartInputsCh0Vector(builder, numElems):
     return builder.StartVector(3, numElems, 1)
 
-def StartInputsVector(builder, numElems):
-    return SerialMailStartInputsVector(builder, numElems)
+def StartInputsCh0Vector(builder, numElems):
+    return SerialMailStartInputsCh0Vector(builder, numElems)
 
-def SerialMailAddClassification(builder, classification):
-    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(classification), 0)
+def SerialMailAddInputsCh1(builder, inputsCh1):
+    builder.PrependUOffsetTRelativeSlot(1, flatbuffers.number_types.UOffsetTFlags.py_type(inputsCh1), 0)
 
-def AddClassification(builder, classification):
-    SerialMailAddClassification(builder, classification)
+def AddInputsCh1(builder, inputsCh1):
+    SerialMailAddInputsCh1(builder, inputsCh1)
 
-def SerialMailStartClassificationVector(builder, numElems):
+def SerialMailStartInputsCh1Vector(builder, numElems):
+    return builder.StartVector(3, numElems, 1)
+
+def StartInputsCh1Vector(builder, numElems):
+    return SerialMailStartInputsCh1Vector(builder, numElems)
+
+def SerialMailAddClassificationCh0(builder, classificationCh0):
+    builder.PrependUOffsetTRelativeSlot(2, flatbuffers.number_types.UOffsetTFlags.py_type(classificationCh0), 0)
+
+def AddClassificationCh0(builder, classificationCh0):
+    SerialMailAddClassificationCh0(builder, classificationCh0)
+
+def SerialMailStartClassificationCh0Vector(builder, numElems):
     return builder.StartVector(4, numElems, 4)
 
-def StartClassificationVector(builder, numElems):
-    return SerialMailStartClassificationVector(builder, numElems)
+def StartClassificationCh0Vector(builder, numElems):
+    return SerialMailStartClassificationCh0Vector(builder, numElems)
 
-def SerialMailAddClassificationActive(builder, classificationActive):
-    builder.PrependBoolSlot(2, classificationActive, 0)
+def SerialMailAddClassificationCh1(builder, classificationCh1):
+    builder.PrependUOffsetTRelativeSlot(3, flatbuffers.number_types.UOffsetTFlags.py_type(classificationCh1), 0)
 
-def AddClassificationActive(builder, classificationActive):
-    SerialMailAddClassificationActive(builder, classificationActive)
+def AddClassificationCh1(builder, classificationCh1):
+    SerialMailAddClassificationCh1(builder, classificationCh1)
 
-def SerialMailAddChannel(builder, channel):
-    builder.PrependBoolSlot(3, channel, 0)
+def SerialMailStartClassificationCh1Vector(builder, numElems):
+    return builder.StartVector(4, numElems, 4)
 
-def AddChannel(builder, channel):
-    SerialMailAddChannel(builder, channel)
+def StartClassificationCh1Vector(builder, numElems):
+    return SerialMailStartClassificationCh1Vector(builder, numElems)
 
 def SerialMailEnd(builder):
     return builder.EndObject()
