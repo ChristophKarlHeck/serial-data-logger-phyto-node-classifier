@@ -32,18 +32,14 @@ pip install -r requirements.txt
 |-----------------|--------------|-------------------------------------------------------------------------|
 | `--port`       | Yes          | Serial port to read from (e.g., `/dev/ttyS0` or `COM3`).                |
 | `--baudrate`   | No           | Baud rate for serial communication (default: `115200`).                |
-| `--file`       | Yes          | Output file name (e.g., `measurement`).                |
-| `--format`     | Yes          | Output format: `csv` or `json`.                                         |
+| `--path`       | No          | Path to save the output file (default: current directory .)              |
 
 ## Example Commands
 ### Log Data to a CSV File
 ```bash
-python3 main.py --port /dev/ttyS0 --baudrate 115200 --file measurement --format csv
+python3 main.py --port /dev/ttyACM0 --baudrate 115200
 ```
-### Log Data to a JSON File
-```bash
-python3 main.py --port /dev/ttyS0 --baudrate 115200 --file measurement --format json
-```
+
 
 ## How It Works
 
@@ -62,4 +58,4 @@ python3 main.py --port /dev/ttyS0 --baudrate 115200 --file measurement --format 
      - Configurable `gain` (default: `4.0`).
 
 4. **Output**:
-   - Exports processed data to JSON or CSV, appending to existing files if applicable.
+   - Exports processed data to CSV, appending to existing files if applicable.
