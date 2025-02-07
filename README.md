@@ -39,7 +39,24 @@ pip install -r requirements.txt
 ```bash
 python3 main.py --port /dev/ttyACM0 --baudrate 115200
 ```
+## Docker
+### Build the Docker Image
+```bash
+docker build -t serial-data-logger-classifier .
+```
 
+### Run in Docker
+```bash
+docker run --name serial-data-logger-classifier-container \
+  --restart=always \
+  --device=/dev/ttyACM0:/dev/ttyACM0 \
+  -v /home/chris/serial-data-logger-phyto-node-classifier:/app/output \
+   --log-opt max-size=10m \
+  --log-opt max-file=3 \
+  -d \
+  serial-data-logger-classifier \
+  --port /dev/ttyACM0 --baudrate 115200 --path /app/output
+```
 
 ## How It Works
 
