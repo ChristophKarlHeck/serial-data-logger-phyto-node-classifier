@@ -4,7 +4,7 @@ import flatbuffers
 import json
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from SerialMail.SerialMail import SerialMail
 from SerialMail.Value import Value
 
@@ -119,7 +119,7 @@ def extract_serial_mail_data(serial_mail):
         byte_dict = {"Data0": value.Data0(), "Data1": value.Data1(), "Data2": value.Data2()}
         raw_input_bytes_ch0.append(byte_dict)
 
-    voltages_ch0 = get_analog_inputs(raw_input_bytes_ch0)
+    voltages_ch0_not_scaled = get_analog_inputs(raw_input_bytes_ch0)
 
     # Extract voltage values ch0(inputs)
     inputs_length_ch1 = serial_mail.InputsCh1Length()
@@ -129,7 +129,7 @@ def extract_serial_mail_data(serial_mail):
         byte_dict = {"Data0": value.Data0(), "Data1": value.Data1(), "Data2": value.Data2()}
         raw_input_bytes_ch1.append(byte_dict)
 
-    voltages_ch1 = get_analog_inputs(raw_input_bytes_ch1)
+    voltages_ch1_not_scaled = get_analog_inputs(raw_input_bytes_ch1)
 
     # Extract classifications
     classification_ch0_length = serial_mail.ClassificationCh0Length()
@@ -140,53 +140,17 @@ def extract_serial_mail_data(serial_mail):
     classification_ch1 = [round(serial_mail.ClassificationCh1(j),3) for j in range(classification_ch1_length)]
 
 
-    return voltages_ch0, voltages_ch1, classification_ch0, classification_ch1
+    return voltages_ch0_not_scaled, voltages_ch1_not_scaled, classification_ch0, classification_ch1
 
 
-def write_to_json(filename, classification_active, channel, raw_input_bytes, voltages, classifications):
-    # Format classifications with three decimal places
-    formatted_classifications = [c for c in classifications]
-
-    # Prepare data to save
-    data = {
-        "Timestamp": datetime.now().isoformat(),
-        "ClassificationActive": classification_active,
-        "Channel": channel,
-        "RawInputBytes": raw_input_bytes,
-        "InputVoltages": voltages,  # Keep as a list of dicts
-        "Classifications": formatted_classifications  # Formatted list
-    }
-
-    # Check if the file exists and initialize if necessary
-    if not os.path.isfile(filename):
-        with open(filename, mode="w") as jsonfile:
-            json.dump([], jsonfile)  # Write an empty JSON array
-
-    # Read existing content
-    with open(filename, mode="r") as jsonfile:
-        try:
-            existing_data = json.load(jsonfile)
-            if not isinstance(existing_data, list):
-                raise ValueError("JSON file must contain a list at the root.")
-        except json.JSONDecodeError:
-            existing_data = []  # If file is empty or invalid, start with an empty list
-
-    # Append the new record
-    existing_data.append(data)
-
-    # Write the updated JSON array back to the file
-    with open(filename, mode="w") as jsonfile:
-        json.dump(existing_data, jsonfile, indent=4)  # Write with formatting for readability
-
-
-def write_to_csv(filename, classification_active, channel, raw_input_bytes, voltages, classifications):
+def write_to_csv(filename, voltages_ch0_not_scaled, voltages_ch1_not_scaled, classification_ch0, classification_ch1):
     # Check if the file exists to decide whether to write a header
     file_exists = os.path.isfile(filename)
 
     # Open the CSV file in append mode
     with open(filename, mode="a", newline="") as csvfile:
         # Define CSV fieldnames and writer
-        fieldnames = ["Timestamp","ClassificationActive", "Channel", "RawInputBytes", "InputVoltages", "Classifications"]
+        fieldnames = ["Datetime","VoltagesCh0NotScaled", "ClassificationCh0", "VoltagesCh1NotScaled", "ClassificationCh1"]
         csv_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         # Write the header only if the file does not exist
@@ -195,12 +159,11 @@ def write_to_csv(filename, classification_active, channel, raw_input_bytes, volt
 
         # Write the data row
         csv_writer.writerow({
-            "Timestamp": datetime.now().isoformat(),
-            "ClassificationActive": classification_active,
-            "Channel": channel,
-            "RawInputBytes": raw_input_bytes,
-            "InputVoltages": voltages, 
-            "Classifications": classifications
+            "Datetime": datetime.now().strftime("%Y-%m-%d %H:%M:%S:%f"),
+            "VoltagesCh0NotScaled": voltages_ch0_not_scaled,
+            "ClassificationCh0": classification_ch0,
+            "VoltagesCh1NotScaled": voltages_ch1_not_scaled,
+            "ClassificationCh1": classification_ch1,
         })
 
 
@@ -214,19 +177,38 @@ def print_serial_mail_data(voltages_ch0, voltages_ch1, classification_ch0, class
 
     print(f"InputVoltagesCh0 ({len(voltages_ch0)}):")
     for i, voltage in enumerate(voltages_ch0, start=1):
-        print(f"  InputVoltageCh0 {i}: {voltage:.3f}")
+        print(f"  InputVoltageCh0 {i}: {voltage:.6f}")
 
     print(f"InputVoltagesCh1 ({len(voltages_ch1)}):")
     for i, voltage in enumerate(voltages_ch1, start=1):
-        print(f"  InputVoltageCh1 {i}: {voltage:.3f}")
+        print(f"  InputVoltageCh1 {i}: {voltage:.6f}")
 
     print(f"ClassificationCh0 ({len(classification_ch0)}):")
     for i, classification in enumerate(classification_ch0, start=1):
-        print(f"  ClassificationCh0 {i}: {classification:.3f}")
+        print(f"  ClassificationCh0 {i}: {classification:.6f}")
 
         print(f"ClassificationCh1 ({len(classification_ch1)}):")
     for i, classification in enumerate(classification_ch1, start=1):
-        print(f"  ClassificationCh1 {i}: {classification:.3f}")
+        print(f"  ClassificationCh1 {i}: {classification:.6f}")
+
+
+def get_dynamic_filename(node, format):
+    """
+    Generate a dynamic filename using the node number and the current timestamp.
+
+    Args:
+        node (int): The node number from FlatBuffers.
+
+    Returns:
+        str: A dynamically generated filename.
+    """
+    # Get the current timestamp
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S:%f")
+
+    # Format the filename
+    filename = f"{node}_{timestamp}.{format}"
+
+    return filename
 
 
 
@@ -235,27 +217,16 @@ def main():
     parser = argparse.ArgumentParser(description="Read and decode SerialMail data from a serial port.")
     parser.add_argument("--port", type=str, required=True, help="Serial port (e.g., /dev/ttyS0 or COM3)")
     parser.add_argument("--baudrate", type=int, default=115200, help="Baud rate (default: 115200)")
-    parser.add_argument("--file", type=str, required=True, help="Output file name (e.g., output.csv or output.json)")
-    parser.add_argument("--format", type=str, choices=["csv", "json"], required=True, help="Output format (csv or json)")
+    parser.add_argument("--path", type=str, default=".", help="Path to save the output file (default: current directory)")
     args = parser.parse_args()
-
-    # Ensure the file has the correct extension
-    if args.format == "csv" and not args.file.endswith(".csv"):
-        args.file += ".csv"
-    elif args.format == "json" and not args.file.endswith(".json"):
-        args.file += ".json"
-
-    # Warn if the output file already exists
-    if os.path.isfile(args.file):
-        print(f"Warning: The file '{args.file}' already exists and will be appended to.")
-        user_input = input("Do you want to continue? (y/n): ").strip().lower()
-        if user_input != 'y':
-            print("Exiting without modifying the file.")
-            exit(0)
 
     # Open the serial connection
     serial_connection = serial.Serial(port=args.port, baudrate=args.baudrate, timeout=1)
     print(f"Listening for data on port {args.port} at {args.baudrate} baud...")
+
+    # Initialize filename as None
+    filename = None
+    file_rotation_time = datetime.now() + timedelta(hours=12)
 
     try:
         while True:
@@ -263,26 +234,24 @@ def main():
             serial_mail = read_serial_mail(serial_connection)
             if serial_mail:
                 # Extract data
-                voltages_ch0, voltages_ch1, classification_ch0, classification_ch1 = extract_serial_mail_data(serial_mail)
+                voltages_ch0_not_scaled, voltages_ch1_not_scaled, classification_ch0, classification_ch1 = extract_serial_mail_data(serial_mail)
+
+                if filename is None or datetime.now() >= file_rotation_time:
+                    base_filename = get_dynamic_filename("C1", "csv")
+                    filename = os.path.join(args.path, base_filename)
+                    file_rotation_time = datetime.now() + timedelta(hours=12)
+                    print(f"Data will be saved to {filename}")
 
                 # Print data
-                print_serial_mail_data(voltages_ch0, voltages_ch1, classification_ch0, classification_ch1)
+                #print_serial_mail_data(voltages_ch0_not_scaled, voltages_ch1_not_scaled, classification_ch0, classification_ch1)
 
                 # Write data to the selected file format
-                # if args.format == "csv":
-                #     try:
-                #         write_to_csv(args.file, classification_active, channel, raw_input_bytes, voltages, classifications)
-                #         print(f"Data successfully written to {args.file} in CSV format.")
-                #     except Exception as e:
-                #         print(f"Failed to write data to {args.file} in CSV format: {e}")
-                # elif args.format == "json":
-                #     try:
-                #         write_to_json(args.file, classification_active, channel, raw_input_bytes, voltages, classifications)
-                #         print(f"Data successfully written to {args.file} in JSON format.")
-                #     except Exception as e:
-                #         print(f"Failed to write data to {args.file} in JSON format: {e}")
-                # else:
-                #     print(f"Unsupported format: {args.format}")
+                try:
+                    write_to_csv(filename, voltages_ch0_not_scaled, voltages_ch1_not_scaled, classification_ch0, classification_ch1)
+                    print(f"Data successfully written to {filename} in CSV format.")
+                except Exception as e:
+                    print(f"Failed to write data to {filename} in CSV format: {e}")
+
 
     except KeyboardInterrupt:
         print("Exiting...")
