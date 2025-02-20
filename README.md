@@ -49,13 +49,13 @@ docker build -t serial-data-logger-classifier .
 ```bash
 docker run --name serial-data-logger-classifier-container \
   --restart=always \
-  --device=/dev/ttyACM0:/dev/ttyACM0 \
-  -v /home/chris/serial-data-logger-phyto-node-classifier:/app/output \
+  --device=/dev/ttyACM2:/dev/ttyACM2 \
+  -v /media/chris/e110508e-b067-4ed5-87a8-5c548bdd8f77:/app/output \
    --log-opt max-size=10m \
   --log-opt max-file=3 \
   -d \
   serial-data-logger-classifier \
-  --port /dev/ttyACM0 --baudrate 115200 --path /app/output
+  --port /dev/ttyACM2 --baudrate 115200 --path /app/output
 ```
 
 ## How It Works
